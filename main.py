@@ -5,11 +5,51 @@ import utils
 import config
 import torchvision
 import torch.nn as nn
+from tqdm import tqdm
 from thop import profile
 from torchvision import datasets
 from utils import data_transforms
 from mobilenetv2 import MobileNetV2
 from torchsummary import summary
+
+
+def train(args, epoch, train_data, device, model, criterion, optimizer, scheduler):
+    model.train()
+    train_loss = 0.0
+    top1 = utils.AvgrageMeter()
+    train_data = tqdm(train_data)
+    train_data.set_description('[%s%04d/%04d %s%f]' % ('Epoch:', epoch+1, args.epochs, 'lr:', scheduler.get_lr()[0]))
+    for step, (inputs, targets) in enumerate(train_data):
+        inputs, targets = inputs.to(device), targets.to(device)
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, targets)
+        loss.backward()
+        prec1, prec5 = utils.accuracy(outputs, targets, topk=(1, 5))
+        n = inputs.size(0)
+        top1.update(prec1.item(), n)
+        optimizer.step()
+        train_loss += loss.item()
+        postfix = {'train_loss': '%.6f' % (train_loss / (step + 1)), 'train_acc': '%.6f' % top1.avg}
+        train_data.set_postfix(log=postfix)
+
+
+def validate(args, epoch, val_data, device, model, criterion):
+    model.eval()
+    val_loss = 0.0
+    val_top1 = utils.AvgrageMeter()
+    with torch.no_grad():
+        for step, (inputs, targets) in enumerate(val_data):
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            val_loss += loss.item()
+            prec1, prec5 = utils.accuracy(outputs, targets, topk=(1, 5))
+            n = inputs.size(0)
+            val_top1.update(prec1.item(), n)
+        print('[Val_Accuracy epoch:%d] val_loss:%f, val_acc:%f'
+              % (epoch + 1, val_loss / (step + 1), val_top1.avg))
+        return val_top1.avg
 
 
 def main():
@@ -21,24 +61,24 @@ def main():
     else:
         device = torch.device("cpu")
 
-    # # dataset
-    # train_transform, valid_transform = data_transforms(args)
-    # if args.dataset == 'cifar10':
-    #     trainset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=True,
-    #                                             download=True, transform=train_transform)
-    #     train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
-    #                                                shuffle=True, pin_memory=True, num_workers=8)
-    #     valset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=False,
-    #                                           download=True, transform=valid_transform)
-    #     val_loader = torch.utils.data.DataLoader(valset, batch_size=args.batch_size,
-    #                                              shuffle=False, pin_memory=True, num_workers=8)
-    # elif args.dataset == 'imagenet':
-    #     train_data_set = datasets.ImageNet(os.path.join(args.data_dir, 'ILSVRC2012', 'train'), train_transform)
-    #     val_data_set = datasets.ImageNet(os.path.join(args.data_dir, 'ILSVRC2012', 'valid'), valid_transform)
-    #     train_loader = torch.utils.data.DataLoader(train_data_set, batch_size=args.batch_size, shuffle=True,
-    #                                                num_workers=8, pin_memory=True, sampler=None)
-    #     val_loader = torch.utils.data.DataLoader(val_data_set, batch_size=args.batch_size, shuffle=False,
-    #                                              num_workers=8, pin_memory=True)
+    # dataset
+    train_transform, valid_transform = data_transforms(args)
+    if args.dataset == 'cifar10':
+        trainset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=True,
+                                                download=True, transform=train_transform)
+        train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
+                                                   shuffle=True, pin_memory=True, num_workers=8)
+        valset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=False,
+                                              download=True, transform=valid_transform)
+        val_loader = torch.utils.data.DataLoader(valset, batch_size=args.batch_size,
+                                                 shuffle=False, pin_memory=True, num_workers=8)
+    elif args.dataset == 'imagenet':
+        train_data_set = datasets.ImageNet(os.path.join(args.data_dir, 'ILSVRC2012', 'train'), train_transform)
+        val_data_set = datasets.ImageNet(os.path.join(args.data_dir, 'ILSVRC2012', 'valid'), valid_transform)
+        train_loader = torch.utils.data.DataLoader(train_data_set, batch_size=args.batch_size, shuffle=True,
+                                                   num_workers=8, pin_memory=True, sampler=None)
+        val_loader = torch.utils.data.DataLoader(val_data_set, batch_size=args.batch_size, shuffle=False,
+                                                 num_workers=8, pin_memory=True)
 
     # SinglePath_OneShot
     model = MobileNetV2()
@@ -54,10 +94,13 @@ def main():
     model = model.to(device)
     summary(model, (3, 32, 32) if args.dataset == 'cifar10' else (3, 224, 224))
 
-
-
-
-
+    print('Start Training Supernet!')
+    for epoch in range(args.epochs):
+        train(args, epoch, train_loader, device, model, criterion, optimizer, scheduler)
+        scheduler.step()
+        if (epoch + 1) % args.val_interval == 0:
+            validate(args, epoch, val_loader, device, model, criterion)
+            utils.save_checkpoint({'state_dict': model.state_dict(), }, epoch + 1, tag=args.exp_name)
 
 
 if __name__ == '__main__':
