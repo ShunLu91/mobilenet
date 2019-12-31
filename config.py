@@ -26,7 +26,7 @@ def get_args():
     # ******************************* dataset *******************************#
     parser.add_argument('--dataset', type=str, default='imagenet', help='[cifar10, imagenet]')
     parser.add_argument('--classes', type=int, default=1000, help='classes of the dataset')
-    parser.add_argument('--cutouexp_namet', action='store_false', help='use cutout')
+    parser.add_argument('--cutout', action='store_true', help='use cutout')
     parser.add_argument('--cutout_length', type=int, default=16, help='cutout length')
     parser.add_argument('--auto_aug', action='store_true', default=False, help='use auto augmentation')
     parser.add_argument('--resize', action='store_true', default=False, help='use resize')
