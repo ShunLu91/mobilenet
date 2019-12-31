@@ -11,7 +11,7 @@ def get_args():
     parser.add_argument('--path', type=int, default=1, help='num of selected paths')
     parser.add_argument('--choice_index', type=int, default=0, help='num of selected paths')
     parser.add_argument('--shadow_bn', action='store_true', help='shadow bn or not, default: False')
-    parser.add_argument('--data_dir', type=str, default='/home/work/dataset/cifar', help='dataset dir')
+    parser.add_argument('--data_dir', type=str, default='/home/work/dataset', help='dataset dir')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
     parser.add_argument('--epochs', type=int, default=100, help='num of epochs')
     parser.add_argument('--search_num', type=int, default=1000, help='num of epochs')
