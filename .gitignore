@@ -1,0 +1,17 @@
+.DS_Store
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+*.npz
+LaTeX/ijcai20-*
+!*.tex
+*.key
+*.doc
+*.pyc
+*.__pycache__
+*.idea
+*.tar
+*.lock
