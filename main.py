@@ -61,7 +61,6 @@ def main():
     # args & device
     args = config.get_args()
     if torch.cuda.is_available():
-        print('Train on GPU!')
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
@@ -79,7 +78,7 @@ def main():
                                                  shuffle=False, pin_memory=True, num_workers=8)
     elif args.dataset == 'imagenet':
         train_data_set = datasets.ImageFolder(os.path.join(args.data_dir, 'ILSVRC2012', 'train'), train_transform)
-        val_data_set = datasets.ImageFolder(os.path.join(args.data_dir, 'ILSVRC2012', 'valid'), valid_transform)
+        val_data_set = datasets.ImageFolder(os.path.join(args.data_dir, 'ILSVRC2012', 'val'), valid_transform)
         train_loader = torch.utils.data.DataLoader(train_data_set, batch_size=args.batch_size, shuffle=True,
                                                    num_workers=8, pin_memory=True, sampler=None)
         val_loader = torch.utils.data.DataLoader(val_data_set, batch_size=args.batch_size, shuffle=False,
