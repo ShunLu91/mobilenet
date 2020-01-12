@@ -11,12 +11,15 @@ from torchvision import datasets
 from utils import data_transforms
 from mobilenetv2 import MobileNetV2
 from torchsummary import summary
+import warnings
+warnings.filterwarnings('ignore')
 
 
 def train(args, epoch, train_data, device, model, criterion, optimizer, scheduler):
     model.train()
     train_loss = 0.0
     top1 = utils.AvgrageMeter()
+    top5 = utils.AvgrageMeter()
     train_data = tqdm(train_data)
     train_data.set_description('[%s%04d/%04d %s%f]' % ('Epoch:', epoch+1, args.epochs, 'lr:', scheduler.get_lr()[0]))
     for step, (inputs, targets) in enumerate(train_data):
@@ -28,10 +31,12 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
         prec1, prec5 = utils.accuracy(outputs, targets, topk=(1, 5))
         n = inputs.size(0)
         top1.update(prec1.item(), n)
+        top5.update(prec5.item(), n)
         optimizer.step()
         train_loss += loss.item()
-        postfix = {'train_loss': '%.6f' % (train_loss / (step + 1)), 'train_acc': '%.6f' % top1.avg}
-        train_data.set_postfix(log=postfix)
+        postfix = {'train_loss': '%.6f' % (train_loss / (step + 1)),
+                   'top1': '%.6f' % top1.avg, 'top5': '%.6f' % top5.avg}
+        train_data.set_postfix(postfix)
 
 
 def validate(args, epoch, val_data, device, model, criterion):
@@ -80,7 +85,7 @@ def main():
         val_loader = torch.utils.data.DataLoader(val_data_set, batch_size=args.batch_size, shuffle=False,
                                                  num_workers=8, pin_memory=True)
 
-    # SinglePath_OneShot
+    # MobileNetV2
     model = MobileNetV2()
     criterion = nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, args.momentum, args.weight_decay)
@@ -94,8 +99,22 @@ def main():
     model = model.to(device)
     summary(model, (3, 32, 32) if args.dataset == 'cifar10' else (3, 224, 224))
 
-    print('Start Training Supernet!')
-    for epoch in range(args.epochs):
+    if args.resume:
+        resume_path = './snapshots/{}full_train_states.pt.tar'.format(args.exp_name)
+        if os.path.isfile(resume_path):
+            print("Loading checkpoint '{}'".format(resume_path))
+            checkpoint = torch.load(resume_path)
+
+            start_epoch = checkpoint['epoch']
+            optimizer.load_state_dict(checkpoint['optimizer_state'])
+            model.load_state_dict(checkpoint['supernet_state'])
+            scheduler.laod_state_dict(checkpoint['scheduler_state'])
+        else:
+            raise ValueError("No checkpoint found at '{}'".format(resume_path))
+    else:
+        start_epoch = 0
+
+    for epoch in range(start_epoch, args.epochs):
         train(args, epoch, train_loader, device, model, criterion, optimizer, scheduler)
         scheduler.step()
         if (epoch + 1) % args.val_interval == 0:

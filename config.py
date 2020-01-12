@@ -23,6 +23,7 @@ def get_args():
     parser.add_argument('--dropout_rate', type=float, default=0.2, help='drop out rate')
     parser.add_argument('--drop_path_prob', type=float, default=0.0, help='drop_path_prob')
     parser.add_argument('--use_se', action='store_true', default=False, help='use SqueezeExcite or not')
+    parser.add_argument('--resume', action='store_true', default=False, help='resume')
     # ******************************* dataset *******************************#
     parser.add_argument('--dataset', type=str, default='imagenet', help='[cifar10, imagenet]')
     parser.add_argument('--classes', type=int, default=1000, help='classes of the dataset')
