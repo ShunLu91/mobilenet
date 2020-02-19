@@ -63,7 +63,7 @@ def validate(args, epoch, val_data, device, model, criterion):
 def main():
     # prepare dir
     if not os.path.exists('./snapshots'):
-        os.mkdir('./full_train')
+        os.mkdir('./snapshots')
 
     # args
     args = config.get_args()
