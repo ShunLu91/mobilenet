@@ -8,10 +8,10 @@ import torch.nn as nn
 from tqdm import tqdm
 from thop import profile
 from torchvision import datasets
-from utils import data_transforms
 from model import MobileNetV2
 from torchsummary import summary
 import torch.backends.cudnn as cudnn
+from utils import data_transforms, set_seed
 
 # warnings
 # import warnings
@@ -61,8 +61,10 @@ def validate(args, epoch, val_data, device, model, criterion):
 
 
 def main():
-    # args & device
+    # args
     args = config.get_args()
+    # seed
+    set_seed(args.seed)
     if not torch.cuda.is_available():
         device = torch.device('cpu')
     else:

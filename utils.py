@@ -60,7 +60,7 @@ def accuracy(output, label, topk=(1,)):
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
-def data_transforms_cifar(args):
+def data_transforms(args):
     assert args.dataset in ['cifar10', 'imagenet']
     if args.dataset == 'cifar10':
         MEAN = [0.49139968, 0.48215827, 0.44653124]
@@ -184,6 +184,17 @@ def drop_path(x, drop_prob):
         x.div_(keep_prob)
         x.mul_(mask)
     return x
+
+
+def set_seed(seed):
+    # seed
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
 
 if __name__ == '__main__':
