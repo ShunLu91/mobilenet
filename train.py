@@ -9,12 +9,15 @@ from tqdm import tqdm
 from thop import profile
 from torchvision import datasets
 from utils import data_transforms
-from mobilenetv2 import MobileNetV2
+from model import MobileNetV2
 from torchsummary import summary
-import warnings
-warnings.filterwarnings('ignore')
+import torch.backends.cudnn as cudnn
 
-# --_--
+# warnings
+# import warnings
+# warnings.filterwarnings('ignore')
+
+
 def train(args, epoch, train_data, device, model, criterion, optimizer, scheduler):
     model.train()
     train_loss = 0.0
@@ -60,10 +63,27 @@ def validate(args, epoch, val_data, device, model, criterion):
 def main():
     # args & device
     args = config.get_args()
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
+    if not torch.cuda.is_available():
+        device = torch.device('cpu')
     else:
-        device = torch.device("cpu")
+        torch.cuda.set_device(args.gpu)
+        cudnn.benchmark = True
+        cudnn.enabled = True
+        device = torch.device("cuda")
+
+    # MobileNetV2
+    model = MobileNetV2()
+    criterion = nn.CrossEntropyLoss().to(device)
+    optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, args.momentum, args.weight_decay)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs), eta_min=1e-8, last_epoch=-1)
+
+    # flops & params & structure
+    flops, params = profile(model, inputs=(torch.randn(1, 3, 32, 32),) if args.dataset == 'cifar10'
+                            else (torch.randn(1, 3, 224, 224),), verbose=False)
+    # print(model)
+    print('Params: %.2fM, Flops:%.2fM' % ((params / 1e6), (flops / 1e6)))
+    model = model.to(device)
+    summary(model, (3, 32, 32) if args.dataset == 'cifar10' else (3, 224, 224))
 
     # dataset
     train_transform, valid_transform = data_transforms(args)
@@ -83,20 +103,6 @@ def main():
                                                    num_workers=8, pin_memory=True, sampler=None)
         val_loader = torch.utils.data.DataLoader(val_data_set, batch_size=args.batch_size, shuffle=False,
                                                  num_workers=8, pin_memory=True)
-
-    # MobileNetV2
-    model = MobileNetV2()
-    criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, args.momentum, args.weight_decay)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs), eta_min=1e-8, last_epoch=-1)
-
-    # flops & params & structure
-    flops, params = profile(model, inputs=(torch.randn(1, 3, 32, 32),) if args.dataset == 'cifar10'
-                            else (torch.randn(1, 3, 224, 224),), verbose=False)
-    # print(model)
-    print('Params: %.2fM, Flops:%.2fM' % ((params / 1e6), (flops / 1e6)))
-    model = model.to(device)
-    summary(model, (3, 32, 32) if args.dataset == 'cifar10' else (3, 224, 224))
 
     if args.resume:
         resume_path = './snapshots/{}full_train_states.pt.tar'.format(args.exp_name)

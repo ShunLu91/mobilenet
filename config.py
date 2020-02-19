@@ -1,8 +1,4 @@
-import time
-import utils
-import torch
 import argparse
-import torchvision
 
 
 def get_args():
@@ -11,7 +7,6 @@ def get_args():
     parser.add_argument('--path', type=int, default=1, help='num of selected paths')
     parser.add_argument('--choice_index', type=int, default=0, help='num of selected paths')
     parser.add_argument('--shadow_bn', action='store_true', help='shadow bn or not, default: False')
-    parser.add_argument('--data_dir', type=str, default='/home/work/dataset', help='dataset dir')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
     parser.add_argument('--epochs', type=int, default=100, help='num of epochs')
     parser.add_argument('--search_num', type=int, default=1000, help='num of epochs')
@@ -26,26 +21,13 @@ def get_args():
     parser.add_argument('--resume', action='store_true', default=False, help='resume')
     # ******************************* dataset *******************************#
     parser.add_argument('--dataset', type=str, default='imagenet', help='[cifar10, imagenet]')
+    parser.add_argument('--data_dir', type=str, default='/dataset/imagenet', help='dataset dir')
     parser.add_argument('--classes', type=int, default=1000, help='classes of the dataset')
     parser.add_argument('--cutout', action='store_true', help='use cutout')
     parser.add_argument('--cutout_length', type=int, default=16, help='cutout length')
     parser.add_argument('--auto_aug', action='store_true', default=False, help='use auto augmentation')
     parser.add_argument('--resize', action='store_true', default=False, help='use resize')
     parser.add_argument('--alpha', default=0.2, type=float, help='interpolation strength (uniform=1., ERM=0.)')
-    # ******************************* ea_search *******************************#
-    # parser.add_argument('--log-dir', type=str, default='snapshots')
-    # parser.add_argument('--input_shape', type=int, default=(1, 3, 32, 32), help='input_shape')
-    # parser.add_argument('--max-epochs', type=int, default=20)
-    # parser.add_argument('--select-num', type=int, default=10)
-    # parser.add_argument('--population-num', type=int, default=50)
-    # parser.add_argument('--m_prob', type=float, default=0.1)
-    # parser.add_argument('--crossover-num', type=int, default=25)
-    # parser.add_argument('--mutation-num', type=int, default=25)
-    # parser.add_argument('--flops-limit', type=float, default=600)
-    # parser.add_argument('--max-train-iters', type=int, default=200)
-    # parser.add_argument('--max-test-iters', type=int, default=40)
-    # parser.add_argument('--train-batch-size', type=int, default=128)
-    # parser.add_argument('--test-batch-size', type=int, default=200)
-    arguments = parser.parse_args()
-    print(arguments)
-    return arguments
+    args = parser.parse_args()
+    print(args)
+    return args
