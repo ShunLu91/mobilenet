@@ -81,7 +81,7 @@ def main():
     flops, params = profile(model, inputs=(torch.randn(1, 3, 32, 32),) if args.dataset == 'cifar10'
                             else (torch.randn(1, 3, 224, 224),), verbose=False)
     # print(model)
-    print('Params: %.2fM, Flops:%.2fM' % ((params / 1e6), (flops / 1e6)))
+    print('Params: %.5fM, Flops:%.5fM' % ((params / 1e6), (flops / 1e6)))
     model = model.to(device)
     summary(model, (3, 32, 32) if args.dataset == 'cifar10' else (3, 224, 224))
 
@@ -97,8 +97,8 @@ def main():
         val_loader = torch.utils.data.DataLoader(valset, batch_size=args.batch_size,
                                                  shuffle=False, pin_memory=True, num_workers=8)
     elif args.dataset == 'imagenet':
-        train_data_set = datasets.ImageFolder(os.path.join(args.data_dir, 'ILSVRC2012', 'train'), train_transform)
-        val_data_set = datasets.ImageFolder(os.path.join(args.data_dir, 'ILSVRC2012', 'val'), valid_transform)
+        train_data_set = datasets.ImageFolder(os.path.join(args.data_dir, 'train'), train_transform)
+        val_data_set = datasets.ImageFolder(os.path.join(args.data_dir, 'val'), valid_transform)
         train_loader = torch.utils.data.DataLoader(train_data_set, batch_size=args.batch_size, shuffle=True,
                                                    num_workers=8, pin_memory=True, sampler=None)
         val_loader = torch.utils.data.DataLoader(val_data_set, batch_size=args.batch_size, shuffle=False,

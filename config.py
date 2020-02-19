@@ -3,7 +3,7 @@ import argparse
 
 def get_args():
     parser = argparse.ArgumentParser("Multi_Path_One-Shot")
-    parser.add_argument('--exp_name', type=str, required=True, help='search model name')
+    parser.add_argument('-e', '--exp_name', type=str, required=True, help='search model name')
     parser.add_argument('--path', type=int, default=1, help='num of selected paths')
     parser.add_argument('--choice_index', type=int, default=0, help='num of selected paths')
     parser.add_argument('--shadow_bn', action='store_true', help='shadow bn or not, default: False')
