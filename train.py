@@ -11,7 +11,7 @@ from torchvision import datasets
 from model import MobileNetV2
 from torchsummary import summary
 import torch.backends.cudnn as cudnn
-from utils import data_transforms, set_seed
+from utils import data_transforms, set_seed, eta_time
 
 # warnings
 # import warnings
@@ -61,6 +61,10 @@ def validate(args, epoch, val_data, device, model, criterion):
 
 
 def main():
+    # prepare dir
+    if not os.path.exists('./snapshots'):
+        os.mkdir('./full_train')
+
     # args
     args = config.get_args()
     # seed
@@ -91,23 +95,23 @@ def main():
     train_transform, valid_transform = data_transforms(args)
     if args.dataset == 'cifar10':
         trainset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=True,
-                                                download=True, transform=train_transform)
+                                                download=False, transform=train_transform)
         train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
                                                    shuffle=True, pin_memory=True, num_workers=8)
         valset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=False,
-                                              download=True, transform=valid_transform)
+                                              download=False, transform=valid_transform)
         val_loader = torch.utils.data.DataLoader(valset, batch_size=args.batch_size,
                                                  shuffle=False, pin_memory=True, num_workers=8)
     elif args.dataset == 'imagenet':
-        train_data_set = datasets.ImageFolder(os.path.join(args.data_dir, 'train'), train_transform)
-        val_data_set = datasets.ImageFolder(os.path.join(args.data_dir, 'val'), valid_transform)
-        train_loader = torch.utils.data.DataLoader(train_data_set, batch_size=args.batch_size, shuffle=True,
+        train_data = datasets.ImageFolder(os.path.join(args.data_dir, 'train'), train_transform)
+        val_data = datasets.ImageFolder(os.path.join(args.data_dir, 'val'), valid_transform)
+        train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True,
                                                    num_workers=8, pin_memory=True, sampler=None)
-        val_loader = torch.utils.data.DataLoader(val_data_set, batch_size=args.batch_size, shuffle=False,
+        val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=False,
                                                  num_workers=8, pin_memory=True)
 
     if args.resume:
-        resume_path = './snapshots/{}full_train_states.pt.tar'.format(args.exp_name)
+        resume_path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
         if os.path.isfile(resume_path):
             print("Loading checkpoint '{}'".format(resume_path))
             checkpoint = torch.load(resume_path)
@@ -115,18 +119,42 @@ def main():
             start_epoch = checkpoint['epoch']
             optimizer.load_state_dict(checkpoint['optimizer_state'])
             model.load_state_dict(checkpoint['supernet_state'])
-            scheduler.laod_state_dict(checkpoint['scheduler_state'])
+            scheduler.load_state_dict(checkpoint['scheduler_state'])
         else:
             raise ValueError("No checkpoint found at '{}'".format(resume_path))
     else:
         start_epoch = 0
 
+    best_acc = 0.0
     for epoch in range(start_epoch, args.epochs):
+        t1 = time.time()
+
+        # train
         train(args, epoch, train_loader, device, model, criterion, optimizer, scheduler)
         scheduler.step()
-        if (epoch + 1) % args.val_interval == 0:
-            validate(args, epoch, val_loader, device, model, criterion)
-            utils.save_checkpoint({'state_dict': model.state_dict(), }, epoch + 1, tag=args.exp_name)
+
+        # validate
+        val_top1, val_top5, val_obj = validate(args, epoch, val_loader, device, model, criterion)
+        elapse = time.time() - t1
+        h, m, s = eta_time(elapse, args.epochs - epoch - 1)
+
+        # save best model
+        if val_top1 > best_acc:
+            best_acc = val_top1
+            # save the states of this epoch
+            state = {
+                'epoch': epoch,
+                'args': args,
+                'optimizer_state': optimizer.state_dict(),
+                'supernet_state': model.state_dict(),
+                'scheduler_state': scheduler.state_dict()
+            }
+            path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
+            torch.save(state, path)
+            # print('\n best val acc: {:.6}'.format(best_acc))
+        print('\nval: loss={:.6}, top1={:.6}, top5={:.6}, best={:.6}, elapse={:.0f}s, eta={:.0f}h {:.0f}m {:.0f}s\n'
+              .format(val_obj, val_top1, val_top5, best_acc, elapse, h, m, s))
+    print('Best Top1 Acc: {:.6}'.format(best_acc))
 
 
 if __name__ == '__main__':

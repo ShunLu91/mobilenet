@@ -4,7 +4,7 @@ import argparse
 def get_args():
     parser = argparse.ArgumentParser("Multi_Path_One-Shot")
     parser.add_argument('-e', '--exp_name', type=str, required=True, help='search model name')
-    parser.add_argument('--path', type=int, default=1, help='num of selected paths')
+    parser.add_argument('--gpu', type=int, default=7, help='gpu id')
     parser.add_argument('--seed', type=int, default=0, help='seed')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
     parser.add_argument('--epochs', type=int, default=100, help='num of epochs')
