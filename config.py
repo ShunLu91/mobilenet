@@ -8,7 +8,6 @@ def get_args():
     parser.add_argument('--seed', type=int, default=0, help='seed')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
     parser.add_argument('--epochs', type=int, default=100, help='num of epochs')
-    parser.add_argument('--search_num', type=int, default=1000, help='num of epochs')
     parser.add_argument('--learning_rate', type=float, default=0.1, help='initial learning rate')
     parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
     parser.add_argument('--weight_decay', type=float, default=1e-4, help='weight decay')
