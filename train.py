@@ -129,33 +129,30 @@ def main():
     best_acc = 0.0
     for epoch in range(start_epoch, args.epochs):
         t1 = time.time()
-
         # train
         train(args, epoch, train_loader, device, model, criterion, optimizer, scheduler)
         scheduler.step()
-
-        # validate
-        val_top1, val_top5, val_loss = validate(args, epoch, val_loader, device, model, criterion)
         elapse = time.time() - t1
         h, m, s = eta_time(elapse, args.epochs - epoch - 1)
-
-        # save best model
-        if val_top1 > best_acc:
-            best_acc = val_top1
-            # save the states of this epoch
-            state = {
-                'epoch': epoch,
-                'args': args,
-                'optimizer_state': optimizer.state_dict(),
-                'supernet_state': model.state_dict(),
-                'scheduler_state': scheduler.state_dict()
-            }
-            path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
-            torch.save(state, path)
-            # print('\n best val acc: {:.6}'.format(best_acc))
-        print('\nval: loss={:.6}, top1={:.6}, top5={:.6}, best={:.6}, elapse={:.3f}h, eta={:.0f}h {:.0f}m {:.0f}s\n'
-              .format(val_loss, val_top1, val_top5, best_acc, elapse/3600, h, m, s))
-    print('Best Top1 Acc: {:.6}'.format(best_acc))
+        # validate
+        if (epoch+1) % args.val_interval == 0 :
+            val_top1, val_top5, val_loss = validate(args, epoch, val_loader, device, model, criterion)
+            # save best model
+            if val_top1 > best_acc:
+                best_acc = val_top1
+                # save the states of this epoch
+                state = {
+                    'epoch': epoch,
+                    'args': args,
+                    'optimizer_state': optimizer.state_dict(),
+                    'supernet_state': model.state_dict(),
+                    'scheduler_state': scheduler.state_dict()
+                }
+                path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
+                torch.save(state, path)
+        print('\nval_best={:.6}, elapse={:.3f}h, eta={:.0f}h {:.0f}m {:.0f}s\n'
+              .format(best_acc, elapse/3600, h, m, s))
+    print('Best Val Top1 Acc: {:.6}'.format(best_acc))
 
 
 if __name__ == '__main__':
