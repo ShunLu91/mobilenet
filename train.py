@@ -14,8 +14,8 @@ import torch.backends.cudnn as cudnn
 from utils import data_transforms, set_seed, eta_time
 
 # warnings
-# import warnings
-# warnings.filterwarnings('ignore')
+import warnings
+warnings.filterwarnings('ignore')
 
 
 def train(args, epoch, train_data, device, model, criterion, optimizer, scheduler):
@@ -46,6 +46,7 @@ def validate(args, epoch, val_data, device, model, criterion):
     model.eval()
     val_loss = 0.0
     val_top1 = utils.AvgrageMeter()
+    val_top5 = utils.AvgrageMeter()
     with torch.no_grad():
         for step, (inputs, targets) in enumerate(val_data):
             inputs, targets = inputs.to(device), targets.to(device)
@@ -55,9 +56,10 @@ def validate(args, epoch, val_data, device, model, criterion):
             prec1, prec5 = utils.accuracy(outputs, targets, topk=(1, 5))
             n = inputs.size(0)
             val_top1.update(prec1.item(), n)
+            val_top5.update(prec5.item(), n)
         print('[Val_Accuracy epoch:%d] val_loss:%f, val_acc:%f'
               % (epoch + 1, val_loss / (step + 1), val_top1.avg))
-        return val_top1.avg
+        return val_top1.avg, val_top5.avg, val_loss / (step + 1)
 
 
 def main():
@@ -134,7 +136,7 @@ def main():
         scheduler.step()
 
         # validate
-        val_top1, val_top5, val_obj = validate(args, epoch, val_loader, device, model, criterion)
+        val_top1, val_top5, val_loss = validate(args, epoch, val_loader, device, model, criterion)
         elapse = time.time() - t1
         h, m, s = eta_time(elapse, args.epochs - epoch - 1)
 
@@ -153,7 +155,7 @@ def main():
             torch.save(state, path)
             # print('\n best val acc: {:.6}'.format(best_acc))
         print('\nval: loss={:.6}, top1={:.6}, top5={:.6}, best={:.6}, elapse={:.0f}s, eta={:.0f}h {:.0f}m {:.0f}s\n'
-              .format(val_obj, val_top1, val_top5, best_acc, elapse, h, m, s))
+              .format(val_loss, val_top1, val_top5, best_acc, elapse, h, m, s))
     print('Best Top1 Acc: {:.6}'.format(best_acc))
 
 
