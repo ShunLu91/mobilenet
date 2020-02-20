@@ -5,7 +5,6 @@ import utils
 import config
 import torchvision
 import torch.nn as nn
-from tqdm import tqdm
 from thop import profile
 from torchvision import datasets
 from model import MobileNetV2
@@ -23,8 +22,6 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
     train_loss = 0.0
     top1 = utils.AvgrageMeter()
     top5 = utils.AvgrageMeter()
-    train_data = tqdm(train_data)
-    train_data.set_description('[%s%04d/%04d %s%f]' % ('Epoch:', epoch+1, args.epochs, 'lr:', scheduler.get_lr()[0]))
     for step, (inputs, targets) in enumerate(train_data):
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
@@ -37,9 +34,9 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
         top5.update(prec5.item(), n)
         optimizer.step()
         train_loss += loss.item()
-        postfix = {'train_loss': '%.6f' % (train_loss / (step + 1)),
-                   'top1': '%.6f' % top1.avg, 'top5': '%.6f' % top5.avg}
-        train_data.set_postfix(postfix)
+        break
+    print('Epoch:{.4d}/{.4d}, lr:{.5f}, loss:{.6f}, top1:{.6f}, top5:{.6f}'
+          .format(epoch + 1, args.epochs, scheduler.get_lr()[0], train_loss / (step + 1), top1.avg, top5.avg))
 
 
 def validate(args, epoch, val_data, device, model, criterion):
@@ -57,9 +54,10 @@ def validate(args, epoch, val_data, device, model, criterion):
             n = inputs.size(0)
             val_top1.update(prec1.item(), n)
             val_top5.update(prec5.item(), n)
-        print('[Val_Accuracy epoch:%d] val_loss:%f, val_acc:%f'
-              % (epoch + 1, val_loss / (step + 1), val_top1.avg))
-        return val_top1.avg, val_top5.avg, val_loss / (step + 1)
+            break
+        print('[Val_Accuracy epoch:{.4d}] val_loss:{.6f}, val_acc:{.6f}'
+              .format(epoch + 1, val_loss / (step + 1), val_top1.avg))
+    return val_top1.avg, val_top5.avg, val_loss / (step + 1)
 
 
 def main():
@@ -71,6 +69,7 @@ def main():
     args = config.get_args()
     # seed
     set_seed(args.seed)
+    # device
     if not torch.cuda.is_available():
         device = torch.device('cpu')
     else:
@@ -87,7 +86,7 @@ def main():
 
     # flops & params & structure
     flops, params = profile(model, inputs=(torch.randn(1, 3, 32, 32),) if args.dataset == 'cifar10'
-                            else (torch.randn(1, 3, 224, 224),), verbose=False)
+    else (torch.randn(1, 3, 224, 224),), verbose=False)
     # print(model)
     print('Params: %.5fM, Flops:%.5fM' % ((params / 1e6), (flops / 1e6)))
     model = model.to(device)
@@ -154,8 +153,8 @@ def main():
             path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
             torch.save(state, path)
             # print('\n best val acc: {:.6}'.format(best_acc))
-        print('\nval: loss={:.6}, top1={:.6}, top5={:.6}, best={:.6}, elapse={:.0f}s, eta={:.0f}h {:.0f}m {:.0f}s\n'
-              .format(val_loss, val_top1, val_top5, best_acc, elapse, h, m, s))
+        print('\nval: loss={:.6}, top1={:.6}, top5={:.6}, best={:.6}, elapse={:.3f}h, eta={:.0f}h {:.0f}m {:.0f}s\n'
+              .format(val_loss, val_top1, val_top5, best_acc, elapse/3600, h, m, s))
     print('Best Top1 Acc: {:.6}'.format(best_acc))
 
 
