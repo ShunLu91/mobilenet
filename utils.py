@@ -116,6 +116,11 @@ def random_choice(path_num, m, layers):
 def count_parameters_in_MB(model):
     return np.sum(np.prod(v.size()) for v in model.parameters())/1e6
 
+def elapse_time(elapse):
+    hour = elapse // 3600
+    minute = (elapse - hour * 3600) // 60
+    second = elapse - hour * 3600 - minute * 60
+    return hour, minute, second
 
 def eta_time(elapse, epoch):
     eta = epoch * elapse

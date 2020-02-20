@@ -10,7 +10,7 @@ from torchvision import datasets
 from model import MobileNetV2
 from torchsummary import summary
 import torch.backends.cudnn as cudnn
-from utils import data_transforms, set_seed, eta_time
+from utils import data_transforms, set_seed, elapse_time, eta_time
 
 # args
 args = config.get_args()
@@ -64,8 +64,8 @@ def validate(args, epoch, val_data, device, model, criterion):
             val_top1.update(prec1.item(), n)
             val_top5.update(prec5.item(), n)
             break
-        print('[Val_Accuracy epoch:{:0>4d}] val_loss:{:.6f}, val_acc:{:.6f}'
-              .format(epoch + 1, val_loss / (step + 1), val_top1.avg))
+        print('[Val_Accuracy epoch:{:0>4d}] val_loss:{:.6f}, val_top1:{:.6f}, val_top5:{:.6f}'
+              .format(epoch + 1, val_loss / (step + 1), val_top1.avg, val_top5.avg))
     val_writer.add_scalar('Loss', val_loss / (step + 1), epoch)
     val_writer.add_scalar('Acc', val_top1.avg, epoch)
 
@@ -143,7 +143,8 @@ def main():
         train(args, epoch, train_loader, device, model, criterion, optimizer, scheduler)
         scheduler.step()
         elapse = time.time() - t1
-        h, m, s = eta_time(elapse, args.epochs - epoch - 1)
+        h0, m0, s0 = elapse_time(elapse)
+        h1, m1, s1 = eta_time(elapse, args.epochs - epoch - 1)
         # validate
         if (epoch+1) % args.val_interval == 0 :
             val_top1, val_top5, val_loss = validate(args, epoch, val_loader, device, model, criterion)
@@ -160,8 +161,8 @@ def main():
                 }
                 path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
                 torch.save(state, path)
-        print('val_best={:.6f}, elapse={:.3f}h, eta={:.0f}h {:.0f}m {:.0f}s\n'
-              .format(best_acc, elapse/3600, h, m, s))
+        print('val_best={:.6f}, elapse={:.0f}h {:.0f}m {:.0f}s, eta={:.0f}h {:.0f}m {:.0f}s\n'
+              .format(best_acc, h0, m0, s0, h1, m1, s1))
     print('Best Val Top1 Acc: {:.6}'.format(best_acc))
 
 
