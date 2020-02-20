@@ -40,7 +40,6 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
         top5.update(prec5.item(), n)
         optimizer.step()
         train_loss += loss.item()
-        break
     train_writer.add_scalar('Loss', train_loss / (step + 1), epoch)
     train_writer.add_scalar('Acc', top1.avg, epoch)
 
@@ -63,7 +62,6 @@ def validate(args, epoch, val_data, device, model, criterion):
             n = inputs.size(0)
             val_top1.update(prec1.item(), n)
             val_top5.update(prec5.item(), n)
-            break
         print('[Val_Accuracy epoch:{:0>4d}] val_loss:{:.6f}, val_top1:{:.6f}, val_top5:{:.6f}'
               .format(epoch + 1, val_loss / (step + 1), val_top1.avg, val_top5.avg))
     val_writer.add_scalar('Loss', val_loss / (step + 1), epoch)
