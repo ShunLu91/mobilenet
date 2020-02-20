@@ -35,7 +35,7 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
         optimizer.step()
         train_loss += loss.item()
         break
-    print('Epoch:{:0>4d}/{:0>4d}, lr:{.5f}, loss:{.6f}, top1:{.6f}, top5:{.6f}'
+    print('Epoch:{:0>4d}/{:0>4d}, lr:{:.5f}, loss:{:.6f}, top1:{:.6f}, top5:{:.6f}'
           .format(epoch + 1, args.epochs, scheduler.get_lr()[0], train_loss / (step + 1), top1.avg, top5.avg))
 
 
@@ -55,7 +55,7 @@ def validate(args, epoch, val_data, device, model, criterion):
             val_top1.update(prec1.item(), n)
             val_top5.update(prec5.item(), n)
             break
-        print('[Val_Accuracy epoch:{:0>4d}] val_loss:{.6f}, val_acc:{.6f}'
+        print('[Val_Accuracy epoch:{:0>4d}] val_loss:{:.6f}, val_acc:{:.6f}'
               .format(epoch + 1, val_loss / (step + 1), val_top1.avg))
     return val_top1.avg, val_top5.avg, val_loss / (step + 1)
 
@@ -150,7 +150,7 @@ def main():
                 }
                 path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
                 torch.save(state, path)
-        print('\nval_best={:.6}, elapse={:.3f}h, eta={:.0f}h {:.0f}m {:.0f}s\n'
+        print('\nval_best={:.6f}, elapse={:.3f}h, eta={:.0f}h {:.0f}m {:.0f}s\n'
               .format(best_acc, elapse/3600, h, m, s))
     print('Best Val Top1 Acc: {:.6}'.format(best_acc))
 
