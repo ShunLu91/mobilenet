@@ -108,9 +108,9 @@ def main():
         train_data = datasets.ImageFolder(os.path.join(args.data_dir, 'train'), train_transform)
         val_data = datasets.ImageFolder(os.path.join(args.data_dir, 'val'), valid_transform)
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True,
-                                                   num_workers=16, pin_memory=True, sampler=None)
+                                                   num_workers=8, pin_memory=True, sampler=None)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=False,
-                                                 num_workers=16, pin_memory=True)
+                                                 num_workers=8, pin_memory=True)
 
     if args.resume:
         resume_path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
