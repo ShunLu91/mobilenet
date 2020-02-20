@@ -12,9 +12,15 @@ from torchsummary import summary
 import torch.backends.cudnn as cudnn
 from utils import data_transforms, set_seed, eta_time
 
+# args
+args = config.get_args()
 # warnings
 import warnings
 warnings.filterwarnings('ignore')
+# SummaryWriter
+from tensorboardX import SummaryWriter
+train_writer = SummaryWriter(log_dir='./writer/' + args.exp_name + '/Train')
+val_writer = SummaryWriter(log_dir='./writer/' + args.exp_name + '/Val')
 
 
 def train(args, epoch, train_data, device, model, criterion, optimizer, scheduler):
@@ -35,6 +41,9 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
         optimizer.step()
         train_loss += loss.item()
         break
+    train_writer.add_scalar('Loss', train_loss / (step + 1), epoch)
+    train_writer.add_scalar('Acc', top1.avg, epoch)
+
     print('Epoch:{:0>4d}/{:0>4d}, lr:{:.5f}, loss:{:.6f}, top1:{:.6f}, top5:{:.6f}'
           .format(epoch + 1, args.epochs, scheduler.get_lr()[0], train_loss / (step + 1), top1.avg, top5.avg))
 
@@ -57,6 +66,9 @@ def validate(args, epoch, val_data, device, model, criterion):
             break
         print('[Val_Accuracy epoch:{:0>4d}] val_loss:{:.6f}, val_acc:{:.6f}'
               .format(epoch + 1, val_loss / (step + 1), val_top1.avg))
+    val_writer.add_scalar('Loss', val_loss / (step + 1), epoch)
+    val_writer.add_scalar('Acc', val_top1.avg, epoch)
+
     return val_top1.avg, val_top5.avg, val_loss / (step + 1)
 
 
@@ -64,9 +76,6 @@ def main():
     # prepare dir
     if not os.path.exists('./snapshots'):
         os.mkdir('./snapshots')
-
-    # args
-    args = config.get_args()
     # seed
     set_seed(args.seed)
     # device
@@ -111,6 +120,7 @@ def main():
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=False,
                                                  num_workers=8, pin_memory=True)
 
+    # resume
     if args.resume:
         resume_path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
         if os.path.isfile(resume_path):
@@ -150,7 +160,7 @@ def main():
                 }
                 path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
                 torch.save(state, path)
-        print('\nval_best={:.6f}, elapse={:.3f}h, eta={:.0f}h {:.0f}m {:.0f}s\n'
+        print('val_best={:.6f}, elapse={:.3f}h, eta={:.0f}h {:.0f}m {:.0f}s\n'
               .format(best_acc, elapse/3600, h, m, s))
     print('Best Val Top1 Acc: {:.6}'.format(best_acc))
 
