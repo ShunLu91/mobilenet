@@ -161,7 +161,7 @@ def main():
                 }
                 path = './snapshots/{}_train_states.pt.tar'.format(args.exp_name)
                 torch.save(state, path)
-        print('val_best={:.6f}, elapse={:.0f}h {:.0f}m {:.0f}s, eta={:.0f}h {:.0f}m {:.0f}s\n'
+        print('val_best={:.6f}, elapse={:.0f}h{:.0f}m{:.0f}s, eta={:.0f}h{:.0f}m{:.0f}s\n'
               .format(best_acc, h0, m0, s0, h1, m1, s1))
     print('Best Val Top1 Acc: {:.6}'.format(best_acc))
 
