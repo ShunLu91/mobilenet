@@ -87,7 +87,12 @@ def main():
 
     # MobileNetV2
     model = MobileNetV2()
-    criterion = nn.CrossEntropyLoss().to(device)
+    criterion = nn.CrossEntropyLoss()
+
+    # parrallel
+    model = nn.DataParallel(model)
+    # criterion = nn.DataParallel(criterion)
+
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, args.momentum, args.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs), eta_min=1e-8, last_epoch=-1)
 
