@@ -131,10 +131,10 @@ def main():
         # 3. 用DistributedSampler给各个worker分数据
         train_sampler = torch.utils.data.distributed.DistributedSampler(
             train_data, num_replicas=hvd.size(), rank=hvd.rank())
-        train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True,
-                                                   num_workers=32, pin_memory=True, sampler=train_sampler)
+        train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=False,
+                                                   num_workers=8, pin_memory=True, sampler=train_sampler)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=False,
-                                                 num_workers=32, pin_memory=True)
+                                                 num_workers=8, pin_memory=True)
 
     # resume
     if args.resume:
