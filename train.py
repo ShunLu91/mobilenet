@@ -29,12 +29,16 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
     train_loss = 0.0
     top1 = utils.AvgrageMeter()
     top5 = utils.AvgrageMeter()
-    start = time.time()
+
     for step, (inputs, targets) in enumerate(tqdm(train_data)):
-        continue
-        # inputs, targets = inputs.to(device), targets.to(device)
+        inputs, targets = inputs.to(device), targets.to(device)
         # optimizer.zero_grad()
-        # outputs = model(inputs)
+        start = time.time()
+        outputs = model(inputs)
+        print(time.time() - start)
+        import sys
+        sys.exit(1)
+
         # loss = criterion(outputs, targets)
         # loss.backward()
         # prec1, prec5 = utils.accuracy(outputs, targets, topk=(1, 5))
@@ -43,9 +47,7 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
         # top5.update(prec5.item(), n)
         # optimizer.step()
         # train_loss += loss.item()
-    print(time.time() - start)
-    import sys
-    sys.exit(1)
+
     train_writer.add_scalar('Loss', train_loss / (step + 1), epoch)
     train_writer.add_scalar('Acc', top1.avg, epoch)
 
