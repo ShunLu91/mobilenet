@@ -97,10 +97,13 @@ def main():
     criterion = nn.CrossEntropyLoss().to(device)
 
     # parrallel
-    model = nn.DataParallel(model)
+    # model = nn.DataParallel(model)
     # criterion = nn.DataParallel(criterion)
 
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, args.momentum, args.weight_decay)
+    optimizer = hvd.DistributedOptimizer(optimizer, named_parameters=model.named_parameters())
+    # 5. 初始化的时候广播参数，这个是为了在一开始的时候同步各个gpu之间的参数
+    hvd.broadcast_parameters(model.state_dict(), root_rank=0)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs), eta_min=1e-8, last_epoch=-1)
 
     # # flops & params & structure
@@ -117,18 +120,21 @@ def main():
         trainset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=True,
                                                 download=False, transform=train_transform)
         train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
-                                                   shuffle=True, pin_memory=True, num_workers=16)
+                                                   shuffle=True, pin_memory=True, num_workers=8)
         valset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=False,
                                               download=False, transform=valid_transform)
         val_loader = torch.utils.data.DataLoader(valset, batch_size=args.batch_size,
-                                                 shuffle=False, pin_memory=True, num_workers=16)
+                                                 shuffle=False, pin_memory=True, num_workers=8)
     elif args.dataset == 'imagenet':
         train_data = datasets.ImageFolder(os.path.join(args.data_dir, 'train'), train_transform)
         val_data = datasets.ImageFolder(os.path.join(args.data_dir, 'val'), valid_transform)
+        # 3. 用DistributedSampler给各个worker分数据
+        train_sampler = torch.utils.data.distributed.DistributedSampler(
+            train_data, num_replicas=hvd.size(), rank=hvd.rank())
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True,
-                                                   num_workers=8, pin_memory=True, sampler=None)
+                                                   num_workers=32, pin_memory=True, sampler=train_sampler)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=False,
-                                                 num_workers=8, pin_memory=True)
+                                                 num_workers=32, pin_memory=True)
 
     # resume
     if args.resume:
