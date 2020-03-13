@@ -86,8 +86,8 @@ def main():
         device = torch.device("cuda")
 
     # MobileNetV2
-    model = MobileNetV2()
-    criterion = nn.CrossEntropyLoss()
+    model = MobileNetV2().to(device)
+    criterion = nn.CrossEntropyLoss().to(device)
 
     # parrallel
     model = nn.DataParallel(model)
