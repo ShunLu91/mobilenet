@@ -9,6 +9,7 @@ from thop import profile
 from torchvision import datasets
 from model import MobileNetV2
 from tqdm import tqdm
+import horovod.torch as hvd
 from torchsummary import summary
 import torch.backends.cudnn as cudnn
 from utils import data_transforms, set_seed, elapse_time, eta_time
@@ -86,6 +87,11 @@ def main():
         cudnn.enabled = True
         device = torch.device("cuda")
 
+    # 1. 初始化horovod
+    hvd.init()
+    # 2. 给当前进程分配对应的gpu，local_rank()返回的是当前是第几个进程
+    torch.cuda.set_device(hvd.local_rank())
+
     # MobileNetV2
     model = MobileNetV2().to(device)
     criterion = nn.CrossEntropyLoss().to(device)
@@ -111,18 +117,18 @@ def main():
         trainset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=True,
                                                 download=False, transform=train_transform)
         train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
-                                                   shuffle=True, pin_memory=True, num_workers=8)
+                                                   shuffle=True, pin_memory=True, num_workers=16)
         valset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=False,
                                               download=False, transform=valid_transform)
         val_loader = torch.utils.data.DataLoader(valset, batch_size=args.batch_size,
-                                                 shuffle=False, pin_memory=True, num_workers=8)
+                                                 shuffle=False, pin_memory=True, num_workers=16)
     elif args.dataset == 'imagenet':
         train_data = datasets.ImageFolder(os.path.join(args.data_dir, 'train'), train_transform)
         val_data = datasets.ImageFolder(os.path.join(args.data_dir, 'val'), valid_transform)
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True,
-                                                   num_workers=32, pin_memory=True, sampler=None)
+                                                   num_workers=8, pin_memory=True, sampler=None)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=False,
-                                                 num_workers=32, pin_memory=True)
+                                                 num_workers=8, pin_memory=True)
 
     # resume
     if args.resume:
