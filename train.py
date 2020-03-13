@@ -96,13 +96,13 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, args.momentum, args.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs), eta_min=1e-8, last_epoch=-1)
 
-    # flops & params & structure
-    flops, params = profile(model, inputs=(torch.randn(1, 3, 32, 32),) if args.dataset == 'cifar10'
-    else (torch.randn(1, 3, 224, 224),), verbose=False)
-    # print(model)
-    print('Params: %.5fM, Flops:%.5fM' % ((params / 1e6), (flops / 1e6)))
-    model = model.to(device)
-    summary(model, (3, 32, 32) if args.dataset == 'cifar10' else (3, 224, 224))
+    # # flops & params & structure
+    # flops, params = profile(model, inputs=(torch.randn(1, 3, 32, 32),) if args.dataset == 'cifar10'
+    # else (torch.randn(1, 3, 224, 224),), verbose=False)
+    # # print(model)
+    # print('Params: %.5fM, Flops:%.5fM' % ((params / 1e6), (flops / 1e6)))
+    # model = model.to(device)
+    # summary(model, (3, 32, 32) if args.dataset == 'cifar10' else (3, 224, 224))
 
     # dataset
     train_transform, valid_transform = data_transforms(args)
