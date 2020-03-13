@@ -80,7 +80,7 @@ def main():
     if not torch.cuda.is_available():
         device = torch.device('cpu')
     else:
-        torch.cuda.set_device(args.gpu)
+        # torch.cuda.set_device(args.gpu)
         cudnn.benchmark = True
         cudnn.enabled = True
         device = torch.device("cuda")
