@@ -8,6 +8,7 @@ import torch.nn as nn
 from thop import profile
 from torchvision import datasets
 from model import MobileNetV2
+from tqdm import tqdm
 from torchsummary import summary
 import torch.backends.cudnn as cudnn
 from utils import data_transforms, set_seed, elapse_time, eta_time
@@ -28,7 +29,7 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
     train_loss = 0.0
     top1 = utils.AvgrageMeter()
     top5 = utils.AvgrageMeter()
-    for step, (inputs, targets) in enumerate(train_data):
+    for step, (inputs, targets) in enumerate(tqdm(train_data)):
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
