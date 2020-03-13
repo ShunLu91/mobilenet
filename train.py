@@ -29,25 +29,18 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
     train_loss = 0.0
     top1 = utils.AvgrageMeter()
     top5 = utils.AvgrageMeter()
-
     for step, (inputs, targets) in enumerate(tqdm(train_data)):
         inputs, targets = inputs.to(device), targets.to(device)
-        # optimizer.zero_grad()
-        start = time.time()
+        optimizer.zero_grad()
         outputs = model(inputs)
-        print(time.time() - start)
-        import sys
-        sys.exit(1)
-
-        # loss = criterion(outputs, targets)
-        # loss.backward()
-        # prec1, prec5 = utils.accuracy(outputs, targets, topk=(1, 5))
-        # n = inputs.size(0)
-        # top1.update(prec1.item(), n)
-        # top5.update(prec5.item(), n)
-        # optimizer.step()
-        # train_loss += loss.item()
-
+        loss = criterion(outputs, targets)
+        loss.backward()
+        prec1, prec5 = utils.accuracy(outputs, targets, topk=(1, 5))
+        n = inputs.size(0)
+        top1.update(prec1.item(), n)
+        top5.update(prec5.item(), n)
+        optimizer.step()
+        train_loss += loss.item()
     train_writer.add_scalar('Loss', train_loss / (step + 1), epoch)
     train_writer.add_scalar('Acc', top1.avg, epoch)
 
@@ -88,7 +81,7 @@ def main():
     if not torch.cuda.is_available():
         device = torch.device('cpu')
     else:
-        torch.cuda.set_device(args.gpu)
+        # torch.cuda.set_device(args.gpu)
         cudnn.benchmark = True
         cudnn.enabled = True
         device = torch.device("cuda")
@@ -98,7 +91,7 @@ def main():
     criterion = nn.CrossEntropyLoss().to(device)
 
     # parrallel
-    # model = nn.DataParallel(model)
+    model = nn.DataParallel(model)
     # criterion = nn.DataParallel(criterion)
 
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, args.momentum, args.weight_decay)
