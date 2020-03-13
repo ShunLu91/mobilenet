@@ -34,9 +34,9 @@ parser.add_argument('--use-adasum', action='store_true', default=False,
                     help='use adasum algorithm to do reduction')
 
 # Default settings from https://arxiv.org/abs/1706.02677.
-parser.add_argument('--batch-size', type=int, default=32,
+parser.add_argument('--batch-size', type=int, default=256,
                     help='input batch size for training')
-parser.add_argument('--val-batch-size', type=int, default=32,
+parser.add_argument('--val-batch-size', type=int, default=256,
                     help='input batch size for validation')
 parser.add_argument('--epochs', type=int, default=90,
                     help='number of epochs to train')
