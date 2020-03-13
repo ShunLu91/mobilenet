@@ -131,8 +131,9 @@ val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.val_batch_
 
 
 # Set up standard ResNet-50 model.
-model = models.resnet50()
-
+# model = models.resnet50()
+from model import MobileNetV2
+model = MobileNetV2()
 # By default, Adasum doesn't need scaling up learning rate.
 # For sum/average with gradient Accumulation: scale learning rate by batches_per_allreduce
 lr_scaler = args.batches_per_allreduce * hvd.size() if not args.use_adasum else 1
