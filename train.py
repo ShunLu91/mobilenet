@@ -111,11 +111,11 @@ def main():
         trainset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=True,
                                                 download=False, transform=train_transform)
         train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
-                                                   shuffle=True, pin_memory=True, num_workers=16)
+                                                   shuffle=True, pin_memory=True, num_workers=48)
         valset = torchvision.datasets.CIFAR10(root=os.path.join(args.data_dir, 'cifar'), train=False,
                                               download=False, transform=valid_transform)
         val_loader = torch.utils.data.DataLoader(valset, batch_size=args.batch_size,
-                                                 shuffle=False, pin_memory=True, num_workers=16)
+                                                 shuffle=False, pin_memory=True, num_workers=48)
     elif args.dataset == 'imagenet':
         train_data = datasets.ImageFolder(os.path.join(args.data_dir, 'train'), train_transform)
         val_data = datasets.ImageFolder(os.path.join(args.data_dir, 'val'), valid_transform)
