@@ -86,7 +86,7 @@ def main():
     if not torch.cuda.is_available():
         device = torch.device('cpu')
     else:
-        # torch.cuda.set_device(args.gpu)
+        torch.cuda.set_device(args.gpu)
         cudnn.benchmark = True
         cudnn.enabled = True
         device = torch.device("cuda")
@@ -96,7 +96,7 @@ def main():
     criterion = nn.CrossEntropyLoss().to(device)
 
     # parrallel
-    model = nn.DataParallel(model)
+    # model = nn.DataParallel(model)
     # criterion = nn.DataParallel(criterion)
 
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, args.momentum, args.weight_decay)
