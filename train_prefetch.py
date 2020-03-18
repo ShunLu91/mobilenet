@@ -9,6 +9,8 @@ from thop import profile
 from torchvision import datasets
 from model import MobileNetV2
 from tqdm import tqdm
+from datetime import datetime
+import sys
 from torchsummary import summary
 import torch.backends.cudnn as cudnn
 from utils import data_transforms, set_seed, elapse_time, eta_time
@@ -78,6 +80,7 @@ class data_prefetcher():
         self.preload()
         return input, target
 
+
 def train(args, epoch, train_data, device, model, criterion, optimizer, scheduler):
     model.train()
     train_loss = 0.0
@@ -85,7 +88,7 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
     top5 = utils.AvgrageMeter()
     prefetcher = data_prefetcher(train_data)
     inputs, targets = prefetcher.next()
-    i = 0
+    step = 0
     while input is not None:
         t = time.time()
         # inputs, targets = inputs.to(device), targets.to(device)
@@ -99,8 +102,24 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
         top5.update(prec5.item(), n)
         optimizer.step()
         train_loss += loss.item()
-        print(time.time() - t)
-    # train_writer.add_scalar('Loss', train_loss / (step + 1), epoch)
+        # eta
+        elapse = time.time() - t
+        eta = (len(train_data) - (step+1)) * elapse
+        hour = eta // 3600
+        minute = (eta - hour * 3600) // 60
+        second = eta - hour * 3600 - minute * 60
+
+        dt = datetime.now()
+        sys.stdout.write("\r{0} {1}  epoch:{2}/{3}, batch:{4}/{5}, lr:{6}, loss:{7}, top1:{8}, eta={9}h {10}m {11}s".format(
+            dt.strftime('%x'), dt.strftime('%X'), '%.4d' % (epoch + 1), '%.4d' % args.epochs,
+                                                  '%.4d' % (step + 1), '%.4d' % len(train_data),
+                                                  '%.5f' % scheduler.get_lr()[0],
+                                                  '%.6f' % (train_loss / (step + 1)),
+                                                  '%.3f' % top1.avg,
+            '%.0f' % hour, '%.0f' % minute, '%.0f' % second, ))
+        sys.stdout.flush()
+        step = step +1
+    train_writer.add_scalar('Loss', train_loss / (step + 1), epoch)
     train_writer.add_scalar('Acc', top1.avg, epoch)
 
     # print('Epoch:{:0>4d}/{:0>4d}, lr:{:.5f}, loss:{:.6f}, top1:{:.6f}, top5:{:.6f}'
