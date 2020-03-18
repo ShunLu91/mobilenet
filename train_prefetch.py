@@ -86,8 +86,8 @@ def train(args, epoch, train_data, device, model, criterion, optimizer, schedule
     prefetcher = data_prefetcher(train_data)
     inputs, targets = prefetcher.next()
     i = 0
-    t = time.time()
     while input is not None:
+        t = time.time()
         # inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
