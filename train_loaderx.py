@@ -130,9 +130,9 @@ def main():
         train_data = datasets.ImageFolder(os.path.join(args.data_dir, 'train'), train_transform)
         val_data = datasets.ImageFolder(os.path.join(args.data_dir, 'val'), valid_transform)
         train_loader = DataLoaderX(train_data, batch_size=args.batch_size, shuffle=True,
-                                                   num_workers=8, pin_memory=True, sampler=None)
+                                                   num_workers=32, pin_memory=True, sampler=None)
         val_loader = DataLoaderX(val_data, batch_size=args.batch_size, shuffle=False,
-                                                 num_workers=8, pin_memory=True)
+                                                 num_workers=32, pin_memory=True)
 
     # resume
     if args.resume:
